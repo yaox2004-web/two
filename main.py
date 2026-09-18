@@ -4,14 +4,19 @@ import socket
 from concurrent.futures import ThreadPoolExecutor
 import requests
 
-# 1. 节点抓取源 (可自行补充/替换)
+# 1. 自动抓取源列表（已补充高频更新源）
 SOURCES = [
     "https://raw.githubusercontent.com/free-nodes/v2rayfree/main/sub",
-    "https://www.ermao.net/sub/v2ray/ermao.net"
+    "https://www.ermao.net/sub/v2ray/ermao.net",
+    "https://raw.githubusercontent.com/m24231/free-v2ray-nodes/master/v2ray.txt",
+    "https://raw.githubusercontent.com/Pawroid/Free-Servers/main/sub",
+    "https://raw.githubusercontent.com/EternityPioneer/V2rayFreeSub/main/sub",
+    "https://raw.githubusercontent.com/peasoft/NoMoreFreeFron/master/sub/sub_merge.txt",
+    "https://raw.githubusercontent.com/NodeFree/NodeFree/main/sub"
 ]
 
 TIMEOUT = 2.0        # TCP 建连超时时间 (秒)
-MAX_WORKERS = 30     # 并发并发测速线程数
+MAX_WORKERS = 30     # 并发测速线程数
 
 def fetch_raw_nodes() -> list[str]:
     """抓取源数据并解码出原始节点列表"""
@@ -19,12 +24,11 @@ def fetch_raw_nodes() -> list[str]:
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     for url in SOURCES:
         try:
-            resp = requests.get(url, headers=headers, timeout=10)
+            resp = requests.get(url, headers=headers, timeout=8)
             if resp.status_code == 200:
                 content = resp.text.strip()
                 # 尝试 Base64 解码
                 try:
-                    # 补齐 base64 填充符
                     missing_padding = len(content) % 4
                     if missing_padding:
                         content += '=' * (4 - missing_padding)
