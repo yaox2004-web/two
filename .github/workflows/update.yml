@@ -1,0 +1,62 @@
+name: Update Subscription
+
+on:
+  schedule:
+    # 每 6 小时跑一次（UTC 时间）
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}      # 允许手动触发
+
+permissions:
+  contents: write            # 需要 push 权限
+
+concurrency:
+  group: update-sub
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      # 缓存 Xray 内核，避免每次重下
+      - name: Cache Xray
+        uses: actions/cache@v4
+        with:
+          path: ./xray
+          key: xray-${{ runner.os }}-latest
+
+      - name: Run updater
+        run: python main.py
+
+      - name: Commit & push
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add sub.txt sub_plain.txt sub_latency.txt clash.yaml
+
+          # 没变化就不提交
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          COUNT=$(wc -l < sub_plain.txt)
+          git commit -m "chore: auto update subscription ($COUNT nodes)"
+          git push
