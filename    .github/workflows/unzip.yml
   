@@ -1,0 +1,27 @@
+name: Unzip a-stock-data
+
+on:
+  workflow_dispatch:
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unzip file
+        run: |
+          unzip a-stock-data-main.zip
+          # ZIP解压后会得到 a-stock-data-main 文件夹
+          # 把里面的文件移动到仓库根目录
+          cp -r a-stock-data-main/* .
+          rm -rf a-stock-data-main a-stock-data-main.zip
+
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "解压a-stock-data源码" || echo "没有变化"
+          git push
